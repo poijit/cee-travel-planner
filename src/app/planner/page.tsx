@@ -7,6 +7,29 @@ import { MapPin, Calendar, DollarSign, Send, Navigation, Sparkles } from "lucide
 import dynamic from "next/dynamic";
 import CostChart from "@/components/ui/CostChart";
 import WeatherCard from "@/components/ui/WeatherCard";
+import UnsplashImage from "@/components/ui/UnsplashImage";
+import { experimental_useObject as useObject } from "ai/react";
+import { z } from "zod";
+
+const itinerarySchema = z.object({
+  title: z.string(),
+  destination: z.string(),
+  estimatedTotalCost: z.string(),
+  days: z.array(z.object({
+    dayNumber: z.number(),
+    theme: z.string(),
+    activities: z.array(z.object({
+      time: z.string(),
+      name: z.string(),
+      description: z.string(),
+      estimatedCost: z.string(),
+      coordinates: z.object({
+        lat: z.number(),
+        lng: z.number()
+      }).optional()
+    }))
+  }))
+});
 
 // Dynamically import the map so Leaflet doesn't crash during Server-Side Rendering
 const DynamicMap = dynamic(() => import("@/components/ui/Map"), { 
@@ -23,10 +46,23 @@ export default function TripPlanner() {
   const [budget, setBudget] = useState("Medium");
   const [interests, setInterests] = useState("");
   const [provider, setProvider] = useState("gemini");
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [itinerary, setItinerary] = useState<any>(null);
-
   const [isSaving, setIsSaving] = useState(false);
+
+  const { object: itinerary, submit, isLoading: isGenerating } = useObject({
+    api: '/api/generate-itinerary',
+    schema: itinerarySchema,
+    onError: (error) => {
+      console.error(error);
+      alert("There was an error generating your trip. Please check your API keys in .env.local.");
+    }
+  });
+
+  const setItinerary = (val: any) => {
+    // This is a shim to maintain compatibility with the "Plan another trip" button
+    if (val === null) {
+      window.location.reload(); // Simplest way to reset the hook state for now
+    }
+  };
 
   // If the user is not logged in, we shouldn't let them plan a trip
   if (status === "unauthenticated") {
@@ -49,32 +85,9 @@ export default function TripPlanner() {
     );
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsGenerating(true);
-    setItinerary(null);
-    
-    try {
-      const response = await fetch('/api/generate-itinerary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ destination, duration, budget, interests, provider }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate itinerary');
-      }
-
-      const data = await response.json();
-      setItinerary(data);
-    } catch (error) {
-      console.error(error);
-      alert("There was an error generating your trip. Please check your API keys in .env.local.");
-    } finally {
-      setIsGenerating(false);
-    }
+    submit({ destination, duration, budget, interests, provider });
   };
 
   const handleSaveTrip = async () => {
@@ -102,8 +115,26 @@ export default function TripPlanner() {
     }
   };
 
-  // If we have an itinerary, render the results instead of the form
-  if (itinerary) {
+  const handleDownloadPDF = async () => {
+    const element = document.getElementById('itinerary-content');
+    if (!element) return;
+    
+    // Dynamically import html2pdf.js on the client side only
+    const html2pdf = (await import('html2pdf.js')).default;
+    
+    const opt = {
+      margin:       10,
+      filename:     `${itinerary.destination.replace(/[^a-zA-Z0-9]/g, '_')}_Trip.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    html2pdf().set(opt).from(element).save();
+  };
+
+  // If we have an itinerary (even a partial one), render the results
+  if (itinerary && itinerary.title) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="flex justify-between items-center mb-8">
@@ -114,43 +145,87 @@ export default function TripPlanner() {
             &larr; Plan another trip
           </button>
           
-          <button 
-            onClick={handleSaveTrip}
-            disabled={isSaving}
-            className={`px-6 py-2 rounded-lg font-medium text-white transition-all shadow-md ${
-              isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 hover:-translate-y-0.5'
-            }`}
-          >
-            {isSaving ? "Saving..." : "Save Trip"}
-          </button>
+          <div className="flex gap-4">
+            {!isGenerating && (
+              <>
+                <button 
+                  onClick={handleDownloadPDF}
+                  className="px-6 py-2 rounded-lg font-medium text-primary bg-primary/10 transition-all hover:bg-primary/20 hover:-translate-y-0.5"
+                >
+                  ⬇️ Download PDF
+                </button>
+                <button 
+                  onClick={handleSaveTrip}
+                  disabled={isSaving}
+                  className={`px-6 py-2 rounded-lg font-medium text-white transition-all shadow-md ${
+                    isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 hover:-translate-y-0.5'
+                  }`}
+                >
+                  {isSaving ? "Saving..." : "Save Trip"}
+                </button>
+              </>
+            )}
+            {isGenerating && (
+              <div className="flex items-center gap-2 text-primary animate-pulse font-medium">
+                <Sparkles size={18} />
+                AI is crafting your trip...
+              </div>
+            )}
+          </div>
         </div>
         
-        <div className="glass rounded-2xl p-6 sm:p-10 shadow-xl border border-border">
-          <h1 className="text-3xl font-extrabold text-foreground mb-2">{itinerary.title}</h1>
-          <p className="text-lg text-text-muted mb-6">Estimated Total Cost: <span className="font-bold text-green-500">{itinerary.estimatedTotalCost}</span></p>
+        <div id="itinerary-content" className="glass rounded-2xl p-6 sm:p-10 shadow-xl border border-border">
+          {itinerary.destination && (
+            <UnsplashImage 
+              query={itinerary.destination} 
+              alt={itinerary.destination} 
+              className="w-full h-64 sm:h-80 rounded-xl mb-6 shadow-md"
+            />
+          )}
+          <h1 className="text-4xl font-extrabold text-foreground mb-2">{itinerary.title}</h1>
+          <p className="text-lg text-text-muted mb-6">Estimated Total Cost: <span className="font-bold text-green-500">{itinerary.estimatedTotalCost || "Calculating..."}</span></p>
           
-          <div className="mb-8">
-            <WeatherCard destination={itinerary.destination} />
-          </div>
+          {itinerary.destination && (
+            <div className="mb-8">
+              <WeatherCard destination={itinerary.destination} />
+            </div>
+          )}
 
           <div className="mb-10">
-            <DynamicMap destination={itinerary.destination} activities={itinerary.days.flatMap((d: any) => d.activities)} />
-            <CostChart days={itinerary.days} />
+            {itinerary.destination && (
+              <DynamicMap 
+                destination={itinerary.destination} 
+                activities={itinerary.days?.flatMap((d: any) => d.activities || []) || []} 
+              />
+            )}
+            {itinerary.days && itinerary.days.length > 0 && (
+              <CostChart days={itinerary.days} />
+            )}
           </div>
 
           <div className="space-y-8">
-            {itinerary.days.map((day: any) => (
+            {itinerary.days?.map((day: any) => (
               <div key={day.dayNumber} className="bg-surface rounded-xl p-6 border border-border">
                 <h3 className="text-xl font-bold text-primary mb-1">Day {day.dayNumber}</h3>
                 <p className="text-text-muted font-medium mb-4">{day.theme}</p>
                 
                 <div className="space-y-4">
-                  {day.activities.map((activity: any, index: number) => (
-                    <div key={index} className="flex flex-col sm:flex-row gap-4 border-l-2 border-primary/30 pl-4 py-2">
-                      <div className="w-24 shrink-0 font-bold text-foreground">{activity.time}</div>
-                      <div>
-                        <h4 className="font-semibold text-foreground text-lg">{activity.name}</h4>
-                        <p className="text-text-muted">{activity.description}</p>
+                  {day.activities?.map((activity: any, index: number) => (
+                    <div key={index} className="flex flex-col sm:flex-row gap-4 border-l-2 border-primary/30 pl-4 py-2 bg-background/50 rounded-r-lg hover:bg-background transition-colors">
+                      {activity.name && (
+                        <UnsplashImage 
+                          query={`${activity.name} ${itinerary.destination}`} 
+                          alt={activity.name} 
+                          className="w-full sm:w-32 h-32 shrink-0 rounded-lg shadow-sm"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-6 h-6 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shrink-0">{index + 1}</span>
+                          {activity.time && <span className="text-sm font-bold text-primary bg-primary/10 px-2 py-0.5 rounded uppercase">{activity.time}</span>}
+                        </div>
+                        <h4 className="font-semibold text-foreground text-xl mb-1">{activity.name}</h4>
+                        <p className="text-text-muted text-sm">{activity.description}</p>
                         <p className="text-sm font-bold text-green-500 mt-1">{activity.estimatedCost}</p>
                       </div>
                     </div>

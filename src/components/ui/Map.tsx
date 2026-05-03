@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -53,6 +53,10 @@ export default function Map({ destination, activities }: MapProps) {
 
   if (!position) return <div className="h-64 sm:h-96 w-full bg-gray-200 dark:bg-gray-800 animate-pulse rounded-2xl flex items-center justify-center">Loading Map...</div>;
 
+  const routePositions: [number, number][] = activities
+    .filter(a => a.coordinates && a.coordinates.lat && a.coordinates.lng)
+    .map(a => [Number(a.coordinates!.lat), Number(a.coordinates!.lng)]);
+
   return (
     <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden shadow-lg border border-border z-0">
       <MapContainer key={`${position[0]}-${position[1]}`} center={position} zoom={11} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
@@ -68,6 +72,14 @@ export default function Map({ destination, activities }: MapProps) {
             <p className="text-sm">Your AI Trip Destination!</p>
           </Popup>
         </Marker>
+
+        {/* Route Line */}
+        {routePositions.length > 1 && (
+          <Polyline 
+            positions={routePositions} 
+            pathOptions={{ color: '#3b82f6', weight: 4, dashArray: '8, 8' }} 
+          />
+        )}
 
         {/* Activity Markers */}
         {activities?.map((activity, index) => {

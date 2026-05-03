@@ -9,12 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.67",
+    "@ai-sdk/openai": "^3.0.58",
     "@aws-sdk/client-dynamodb": "^3.1041.0",
+    "@aws-sdk/client-ec2": "^3.1041.0",
     "@aws-sdk/lib-dynamodb": "^3.1041.0",
     "@google/generative-ai": "^0.24.1",
+    "ai": "^6.0.174",
     "chart.js": "^4.5.1",
     "dotenv": "^17.4.2",
     "groq-sdk": "^1.1.2",
+    "html2pdf.js": "^0.14.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "next": "16.2.4",
@@ -23,7 +28,8 @@
     "react": "19.2.4",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.4",
-    "react-leaflet": "^5.0.0"
+    "react-leaflet": "^5.0.0",
+    "zod": "^4.4.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
