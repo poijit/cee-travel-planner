@@ -25,16 +25,25 @@ export default function Map({ destination, activities }: MapProps) {
   const [position, setPosition] = useState<[number, number] | null>(null);
 
   useEffect(() => {
-    // In a real production app, we would use a Geocoding API (like Google Maps or Mapbox) 
-    // to convert the 'destination' string into actual coordinates.
-    // For this prototype, if it's Tokyo, we hardcode it. Otherwise, default to a random place.
-    if (destination.toLowerCase().includes("tokyo")) {
-      setPosition([35.6762, 139.6503]);
-    } else if (destination.toLowerCase().includes("paris")) {
-      setPosition([48.8566, 2.3522]);
-    } else {
-      // Default fallback (e.g. London)
-      setPosition([51.5074, -0.1278]);
+    async function fetchCoordinates() {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destination)}&limit=1`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          setPosition([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        } else {
+          // Default fallback (London) if destination is extremely obscure
+          setPosition([51.5074, -0.1278]);
+        }
+      } catch (error) {
+        console.error("Geocoding failed:", error);
+        setPosition([51.5074, -0.1278]);
+      }
+    }
+
+    if (destination) {
+      fetchCoordinates();
     }
   }, [destination]);
 
@@ -42,7 +51,7 @@ export default function Map({ destination, activities }: MapProps) {
 
   return (
     <div className="h-64 sm:h-96 w-full rounded-2xl overflow-hidden shadow-lg border border-border z-0">
-      <MapContainer center={position} zoom={11} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
+      <MapContainer key={`${position[0]}-${position[1]}`} center={position} zoom={11} scrollWheelZoom={false} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
