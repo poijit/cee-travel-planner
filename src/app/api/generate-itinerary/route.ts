@@ -25,7 +25,11 @@ function buildPrompt(destination: string, duration: string, budget: string, inte
               "time": "Morning/Afternoon/Evening",
               "name": "Name of place or activity",
               "description": "Brief description",
-              "estimatedCost": "e.g. $20"
+              "estimatedCost": "e.g. $20",
+              "coordinates": {
+                "lat": "number (e.g. 48.8606)",
+                "lng": "number (e.g. 2.3376)"
+              }
             }
           ]
         }

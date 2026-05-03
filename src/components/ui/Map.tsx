@@ -18,7 +18,11 @@ const customIcon = new L.Icon({
 
 interface MapProps {
   destination: string;
-  activities: { name: string; description: string }[];
+  activities: { 
+    name: string; 
+    description: string;
+    coordinates?: { lat: number; lng: number };
+  }[];
 }
 
 export default function Map({ destination, activities }: MapProps) {
@@ -64,6 +68,25 @@ export default function Map({ destination, activities }: MapProps) {
             <p className="text-sm">Your AI Trip Destination!</p>
           </Popup>
         </Marker>
+
+        {/* Activity Markers */}
+        {activities?.map((activity, index) => {
+          if (activity.coordinates && activity.coordinates.lat && activity.coordinates.lng) {
+            return (
+              <Marker 
+                key={`activity-${index}`} 
+                position={[Number(activity.coordinates.lat), Number(activity.coordinates.lng)]} 
+                icon={customIcon}
+              >
+                <Popup>
+                  <strong className="text-md text-primary font-bold">{activity.name}</strong>
+                  <p className="text-xs mt-1 leading-tight">{activity.description}</p>
+                </Popup>
+              </Marker>
+            );
+          }
+          return null;
+        })}
       </MapContainer>
     </div>
   );
