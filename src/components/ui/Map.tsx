@@ -72,14 +72,22 @@ export default function Map({ destination, activities }: MapProps) {
         {/* Activity Markers */}
         {activities?.map((activity, index) => {
           if (activity.coordinates && activity.coordinates.lat && activity.coordinates.lng) {
+            const createNumberedIcon = (num: number) => new L.DivIcon({
+              className: 'custom-div-icon',
+              html: `<div style="background-color: #3b82f6; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.4);">${num}</div>`,
+              iconSize: [28, 28],
+              iconAnchor: [14, 14],
+              popupAnchor: [0, -14]
+            });
+
             return (
               <Marker 
                 key={`activity-${index}`} 
                 position={[Number(activity.coordinates.lat), Number(activity.coordinates.lng)]} 
-                icon={customIcon}
+                icon={createNumberedIcon(index + 1)}
               >
                 <Popup>
-                  <strong className="text-md text-primary font-bold">{activity.name}</strong>
+                  <strong className="text-md text-primary font-bold">{index + 1}. {activity.name}</strong>
                   <p className="text-xs mt-1 leading-tight">{activity.description}</p>
                 </Popup>
               </Marker>
