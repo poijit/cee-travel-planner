@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import CostChart from "@/components/ui/CostChart";
 import WeatherCard from "@/components/ui/WeatherCard";
 import UnsplashImage from "@/components/ui/UnsplashImage";
-import { experimental_useObject as useObject } from "ai/react";
+import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { z } from "zod";
 
 const itinerarySchema = z.object({
