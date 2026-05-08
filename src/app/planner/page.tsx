@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import CostChart from "@/components/ui/CostChart";
 import WeatherCard from "@/components/ui/WeatherCard";
 import UnsplashImage from "@/components/ui/UnsplashImage";
-import { experimental_useObject as useObject } from "ai/react";
+import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { z } from "zod";
 
 const itinerarySchema = z.object({
@@ -109,7 +109,7 @@ export default function TripPlanner() {
       router.push('/saved');
     } catch (error) {
       console.error("Error saving trip:", error);
-      alert("Failed to save the trip to AWS DynamoDB.");
+      alert("Failed to save the trip. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +117,7 @@ export default function TripPlanner() {
 
   const handleDownloadPDF = async () => {
     const element = document.getElementById('itinerary-content');
-    if (!element) return;
+    if (!element || !itinerary || !itinerary.destination) return;
     
     // Dynamically import html2pdf.js on the client side only
     const html2pdf = (await import('html2pdf.js')).default;
@@ -125,9 +125,9 @@ export default function TripPlanner() {
     const opt = {
       margin:       10,
       filename:     `${itinerary.destination.replace(/[^a-zA-Z0-9]/g, '_')}_Trip.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
+      image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
     };
     
     html2pdf().set(opt).from(element).save();
@@ -199,7 +199,7 @@ export default function TripPlanner() {
               />
             )}
             {itinerary.days && itinerary.days.length > 0 && (
-              <CostChart days={itinerary.days} />
+              <CostChart days={itinerary.days as any} />
             )}
           </div>
 

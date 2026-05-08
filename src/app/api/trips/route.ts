@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { db } from "@/lib/aws";
-import { PutCommand, QueryCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { getDatabase } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 import crypto from "crypto";
-
-const TABLE_NAME = "SavedTrips";
 
 export async function POST(req: Request) {
   try {
@@ -16,26 +14,21 @@ export async function POST(req: Request) {
     const userId = (session.user as any).id;
     const tripData = await req.json();
 
+    const db = await getDatabase();
     const tripId = crypto.randomUUID();
-    const item = {
+
+    await db.collection("trips").insertOne({
       UserId: userId,
       TripId: tripId,
       CreatedAt: new Date().toISOString(),
       TripData: tripData,
-    };
-
-    await db.send(
-      new PutCommand({
-        TableName: TABLE_NAME,
-        Item: item,
-      })
-    );
+    });
 
     return NextResponse.json({ success: true, tripId });
   } catch (error) {
-    console.error("Error saving trip to DynamoDB:", error);
+    console.error("Error saving trip to MongoDB:", error);
     return NextResponse.json(
-      { error: "Failed to save trip. Ensure DynamoDB table 'SavedTrips' exists." },
+      { error: "Failed to save trip." },
       { status: 500 }
     );
   }
@@ -49,21 +42,14 @@ export async function GET(req: Request) {
     }
 
     const userId = (session.user as any).id;
+    const db = await getDatabase();
 
-    const response = await db.send(
-      new QueryCommand({
-        TableName: TABLE_NAME,
-        KeyConditionExpression: "UserId = :userId",
-        ExpressionAttributeValues: {
-          ":userId": userId,
-        },
-      })
-    );
-
-    // Sort by newest first
-    const trips = response.Items?.sort((a, b) => 
-      new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()
-    ) || [];
+    // Find all trips for this user, sorted newest first
+    const trips = await db
+      .collection("trips")
+      .find({ UserId: userId })
+      .sort({ CreatedAt: -1 })
+      .toArray();
 
     return NextResponse.json(trips);
   } catch (error) {
@@ -87,15 +73,12 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: "TripId is required" }, { status: 400 });
     }
 
-    await db.send(
-      new DeleteCommand({
-        TableName: TABLE_NAME,
-        Key: {
-          UserId: userId,
-          TripId: tripId,
-        },
-      })
-    );
+    const db = await getDatabase();
+
+    await db.collection("trips").deleteOne({
+      UserId: userId,
+      TripId: tripId,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

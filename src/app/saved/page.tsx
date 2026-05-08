@@ -81,7 +81,7 @@ export default function SavedTrips() {
           </div>
           <h3 className="text-2xl font-bold mb-2">No trips saved yet</h3>
           <p className="text-text-muted mb-8 max-w-md">
-            You haven't saved any itineraries to your AWS DynamoDB database yet.
+            You haven't saved any itineraries yet.
           </p>
           <Link 
             href="/planner"
