@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const isLoading = status === "loading";
 
@@ -33,13 +33,14 @@ export default function Navbar() {
           <div className="flex items-center gap-4">
             {mounted && (
               <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-primary transition-colors"
                 aria-label="Toggle theme"
               >
-                {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                {resolvedTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
               </button>
             )}
+
 
             {!isLoading && (
               <>
@@ -51,7 +52,7 @@ export default function Navbar() {
                     >
                       Saved Trips
                     </Link>
-                    <span className="text-sm text-text-muted hidden md:block border-l border-border pl-4">
+                    <span className="text-sm text-gray-700 dark:text-gray-300 hidden md:block border-l border-border pl-4">
                       {session.user?.name}
                     </span>
                     <button
