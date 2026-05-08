@@ -93,6 +93,7 @@ export default function TripPlanner() {
   const handleSaveTrip = async () => {
     setIsSaving(true);
     try {
+      if (!itinerary) throw new Error("No itinerary to save");
       const response = await fetch('/api/trips', {
         method: 'POST',
         headers: {
@@ -117,14 +118,15 @@ export default function TripPlanner() {
 
   const handleDownloadPDF = async () => {
     const element = document.getElementById('itinerary-content');
-    if (!element || !itinerary || !itinerary.destination) return;
+    const dest = itinerary?.destination;
+    if (!element || !itinerary || !dest) return;
     
     // Dynamically import html2pdf.js on the client side only
     const html2pdf = (await import('html2pdf.js')).default;
     
     const opt = {
       margin:       10,
-      filename:     `${itinerary.destination.replace(/[^a-zA-Z0-9]/g, '_')}_Trip.pdf`,
+      filename:     `${dest.replace(/[^a-zA-Z0-9]/g, '_')}_Trip.pdf`,
       image:        { type: 'jpeg' as const, quality: 0.98 },
       html2canvas:  { scale: 2, useCORS: true },
       jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }

@@ -10,8 +10,8 @@ This project was built using modern web development standards and cloud infrastr
 *   **Language:** TypeScript
 *   **Styling:** Tailwind CSS (with global Dark Mode support)
 *   **Authentication:** NextAuth.js (GitHub OAuth)
-*   **Database:** AWS DynamoDB (Serverless NoSQL)
-*   **Deployment:** AWS EC2 (Amazon Linux 2023, PM2, Nginx/iptables)
+*   **Database:** MongoDB Atlas (Managed NoSQL)
+*   **Deployment:** Vercel (CI/CD via GitHub)
 
 ### 2.1 Why Next.js?
 Next.js was chosen because it allows for seamless Full-Stack development. We can write our React frontend components and our secure backend API routes (like `/api/generate-itinerary`) in the exact same repository.
@@ -35,18 +35,17 @@ Once the AI generates the itinerary, the data is passed to three specialized das
 To comply with security best practices, hardcoded passwords are strictly avoided. We integrated **NextAuth.js** using GitHub OAuth. When users click "Log in", they authenticate securely via GitHub. This ensures our app never handles or stores sensitive passwords, and allows us to uniquely identify users via their GitHub ID.
 
 ### 3.4 Cloud Database Persistence
-Users can save their favorite generated trips to the cloud. We implemented **AWS DynamoDB**, a highly scalable NoSQL database. 
-*   **Partition Key:** `UserId` (The user's GitHub ID, ensuring users can only see their own trips).
-*   **Sort Key:** `TripId` (A unique UUID for the specific trip).
-Our backend API routes (`/api/trips`) use the official `@aws-sdk/client-dynamodb` library to securely perform Create, Read, and Delete operations.
+Users can save their favorite generated trips to the cloud. We implemented **MongoDB Atlas**, a highly scalable NoSQL database. 
+*   **Collection:** `trips`
+*   **Structure:** Each document contains `UserId` (the user's GitHub ID), a unique `TripId`, and the itinerary JSON.
+Our backend API routes (`/api/trips`) use the official `mongodb` driver to securely perform Create, Read, and Delete operations.
 
 ## 4. Deployment Strategy
-Due to restrictions common in AWS Learner Labs regarding AWS Amplify, the application was deployed manually to a production-grade **AWS EC2 Virtual Server**.
+The application is deployed on **Vercel**, which provides a seamless CI/CD pipeline integrated with GitHub.
 
-1.  **Infrastructure:** An Amazon Linux 2023 `t2.micro` instance was provisioned.
-2.  **Process Management:** `pm2` was installed to run the Next.js production build (`npm run build`) permanently in the background.
-3.  **Memory Optimization:** A 1GB Swap File was created on the EC2 instance to prevent Out-Of-Memory (OOM) crashes during the intensive Next.js compilation process.
-4.  **Networking:** `iptables` was configured to silently forward standard HTTP traffic (Port 80) directly to the Next.js server (Port 3000), allowing users to access the site via a clean IP address without specifying ports.
+1.  **Infrastructure:** Serverless functions handle the backend API routes.
+2.  **Environment Variables:** All sensitive API keys and database connection strings are managed securely via the Vercel dashboard.
+3.  **Automatic Deploys:** Every push to the `master` branch triggers an automatic production build and deployment.
 
 ## 5. Conclusion
 This project successfully demonstrates the integration of modern UI design, third-party API orchestration (AI, Maps, Weather), secure authentication, and cloud infrastructure management. It serves as a robust foundation for a scalable, AI-driven SaaS application.
