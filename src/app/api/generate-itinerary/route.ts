@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       model = groq('llama-3.3-70b-versatile');
     } else {
       const google = createGoogleGenerativeAI({
-        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+        apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
       });
       model = google('gemini-1.5-flash');
     }
