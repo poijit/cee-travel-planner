@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       const google = createGoogleGenerativeAI({
         apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY || "",
       });
-      model = google('gemini-1.5-flash');
+      model = google('gemini-2.5-flash');
     }
 
     const result = await streamObject({
