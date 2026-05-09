@@ -45,7 +45,6 @@ export default function TripPlanner() {
   const [duration, setDuration] = useState("3");
   const [budget, setBudget] = useState("Medium");
   const [interests, setInterests] = useState("");
-  const [provider, setProvider] = useState("gemini");
   const [isSaving, setIsSaving] = useState(false);
 
   const { object: itinerary, submit, isLoading: isGenerating } = useObject({
@@ -87,7 +86,7 @@ export default function TripPlanner() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submit({ destination, duration, budget, interests, provider });
+    submit({ destination, duration, budget, interests });
   };
 
   const handleSaveTrip = async () => {
@@ -323,37 +322,15 @@ export default function TripPlanner() {
             />
           </div>
 
-          {/* AI Model Selector */}
+          {/* AI Model Information */}
           <div>
             <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
               <Sparkles size={18} className="text-amber-500" />
-              AI Model
+              Powered By
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setProvider("gemini")}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  provider === "gemini"
-                    ? "border-primary bg-primary/10 shadow-md"
-                    : "border-gray-300 dark:border-gray-700 hover:border-primary/50"
-                }`}
-              >
-                <p className="font-bold text-foreground">Gemini 1.5 Flash</p>
-                <p className="text-xs text-text-muted mt-1">by Google — Fast & accurate</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => setProvider("groq")}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  provider === "groq"
-                    ? "border-primary bg-primary/10 shadow-md"
-                    : "border-gray-300 dark:border-gray-700 hover:border-primary/50"
-                }`}
-              >
-                <p className="font-bold text-foreground">Llama 3.3 70B</p>
-                <p className="text-xs text-text-muted mt-1">by Meta via Groq — Ultra fast</p>
-              </button>
+            <div className="p-4 rounded-xl border-2 border-primary bg-primary/10 shadow-md">
+              <p className="font-bold text-foreground">Gemini 1.5 Flash</p>
+              <p className="text-xs text-text-muted mt-1">by Google — Fast & accurate itinerary generation</p>
             </div>
           </div>
 
