@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamObject } from 'ai';
 import { z } from 'zod';
@@ -28,6 +28,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { destination, duration, budget, interests, provider = "gemini" } = body;
 
+    console.log(`Generating itinerary for ${destination} using ${provider}...`);
+
     if (!destination || !duration || !budget) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), { status: 400 });
     }
@@ -42,6 +44,9 @@ export async function POST(req: Request) {
       });
       model = groq('llama-3.3-70b-versatile');
     } else {
+      const google = createGoogleGenerativeAI({
+        apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+      });
       model = google('gemini-1.5-flash');
     }
 
@@ -53,7 +58,13 @@ export async function POST(req: Request) {
 
     return result.toTextStreamResponse();
   } catch (error: any) {
-    console.error("Error generating itinerary:", error);
-    return new Response(JSON.stringify({ error: error.message || "Failed to generate itinerary." }), { status: 500 });
+    console.error("AI Generation Error:", error);
+    return new Response(JSON.stringify({ 
+      error: error.message || "Failed to generate itinerary.",
+      details: error.stack
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
