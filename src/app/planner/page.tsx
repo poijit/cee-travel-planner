@@ -196,7 +196,7 @@ export default function TripPlanner() {
             {itinerary.destination && (
               <DynamicMap 
                 destination={itinerary.destination} 
-                activities={itinerary.days?.flatMap((d: any) => d.activities || []) || []} 
+                activities={itinerary.days?.flatMap((d: any) => d?.activities || []) || []} 
               />
             )}
             {itinerary.days && itinerary.days.length > 0 && (
@@ -205,13 +205,17 @@ export default function TripPlanner() {
           </div>
 
           <div className="space-y-8">
-            {itinerary.days?.map((day: any) => (
-              <div key={day.dayNumber} className="bg-surface rounded-xl p-6 border border-border">
+            {itinerary.days?.map((day: any, dayIdx: number) => {
+              if (!day) return null;
+              return (
+              <div key={day.dayNumber || dayIdx} className="bg-surface rounded-xl p-6 border border-border">
                 <h3 className="text-xl font-bold text-primary mb-1">Day {day.dayNumber}</h3>
                 <p className="text-text-muted font-medium mb-4">{day.theme}</p>
                 
                 <div className="space-y-4">
-                  {day.activities?.map((activity: any, index: number) => (
+                  {day.activities?.map((activity: any, index: number) => {
+                    if (!activity) return null;
+                    return (
                     <div key={index} className="flex flex-col sm:flex-row gap-4 border-l-2 border-primary/30 pl-4 py-2 bg-background/50 rounded-r-lg hover:bg-background transition-colors">
                       {activity.name && (
                         <UnsplashImage 
@@ -230,10 +234,10 @@ export default function TripPlanner() {
                         <p className="text-sm font-bold text-green-500 mt-1">{activity.estimatedCost}</p>
                       </div>
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
       </div>
