@@ -23,7 +23,7 @@ const itinerarySchema = z.object({
   }))
 });
 
-export const maxDuration = 60;
+export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {
